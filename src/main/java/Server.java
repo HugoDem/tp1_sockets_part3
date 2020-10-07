@@ -1,53 +1,60 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 public class Server implements Runnable {
-    private static Socket connectionSocket;
+    private static ServerSocket mySocket;
+    private static final String[] loginList = {"igoTrip", "Pipou79", "Bawawa", "PhsychedLego", "TTT","OtherMan","TheBean", "ILikeTrains","oopsIdidItAgain","French79","BillyTheKid"};
+    private static List<mychat> chatList = new ArrayList<mychat>();
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws IOException {
+
+        mySocket = new ServerSocket(5555);
         System.out.println(" Server is Running ");
-        ServerSocket mySocket = new ServerSocket(5555);
 
-        while (true) {
-            connectionSocket = mySocket.accept();
-            Server serv = new Server(connectionSocket);
+        Scanner scan = new Scanner(System.in);
+        System.out.println("How many participants in the group chat ?");
+        int nb = scan.nextInt();
+
+        for(int _ = 0; _ < nb; _++) {
+            Server serv = new Server();
             Thread serverThread = new Thread(serv);
             serverThread.start();
         }
     }
 
-    public Server(Socket s) {
-    }
+    public Server(){}
 
-    public void run() {
-        while(true){
+    public void run(){
 
             try {
+                mychat chat = new mychat(loginList[(int)(Math.random() * loginList.length)]);
+                chatList.add(chat);
+
+                Socket connectionSocket = mySocket.accept();
+                InputStream is = connectionSocket.getInputStream();
+
                 BufferedReader reader = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(connectionSocket.getOutputStream()));
 
-                writer.write("*** Welcome to the Calculation Server (Addition Only) ***\r\n");
-                writer.write("*** Please type in the first number and press Enter : \n");
+                while(true){
+                    String line = reader.readLine();
+                    if(line != null) updateChat(line);
+                }
+            } catch ( IOException e ){ e.printStackTrace(); }
 
-                writer.flush();
-                String data1 = reader.readLine().trim();
+    }
 
-                writer.write("*** Please type in the second number and press Enter :\n");
-
-                writer.flush();
-                String data2 = reader.readLine().trim();
-
-                int num1 = Integer.parseInt(data1);
-                int num2 = Integer.parseInt(data2);
-                int result = num1 + num2;
-
-                System.out.println("Addition operation done ");
-                writer.write("\r\n=== Result is : \n" + result + "\n");
-                writer.flush();
-
-                //connectionSocket.close();
-
-            } catch ( Exception e ){ e.printStackTrace(); }
+    public void updateChat(String s){
+        for(mychat chat : chatList){
+            if(chat == null) { System.out.println("chat null"); }
+            if(chat.ta.getText() != null){
+                chat.ta.setText(chat.ta.getText()+"\n"+s);
+            } else {
+                chat.ta.setText(s);
+            }
         }
     }
+
 }
